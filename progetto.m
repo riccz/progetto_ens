@@ -130,7 +130,7 @@ end
 h_s = plot(t, sum_noises, 'LineWidth', 1.5);
 plot(t, -sum_noises, 'LineWidth', 1.5, 'Color', h_s.Color);
 legend([h_s h], [{'\SigmaAi'} legend_text], 'Location', 'southeast');
-print('y_w_noise_ampl', '-depsc');
+print('y_w_noise', '-depsc');
 
 % Risposta in freq. di un filtro selettivo ( per f1 )
 figure(6);
