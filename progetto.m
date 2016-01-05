@@ -9,12 +9,12 @@ b_all = 1;
 a_all = 1;
 plot_data = [];
 
-% Filtra un rumore alla volta da y_filt
-dft_ampl_thresh = 10; % Aumento dell'ampiezza della DFT per rilevare un rumore
+dft_ampl_thresh = 10; % Ampiezza relativa della DFT per rilevare un rumore
 q_notch = 10; % Fattore di merito dei filtri notch
 q_noise_params = 200; % Fattore di merito dei filtri per selezionare i rumori
 noise_start_thresh = 10; % Aumento di ampiezza per rilevare l'inizio del rumore
 y_filt = y;
+% Filtra un rumore alla volta da y_filt
 while true
     f_0 = find_noise(y_filt, Fs, dft_ampl_thresh);
     if isnan(f_0)
