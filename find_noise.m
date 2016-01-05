@@ -4,7 +4,7 @@ y_clean = y(1:4*Fs);
 Y_clean = 1/Fs * fft(y_clean);
 Y_clean_max = max(abs(Y_clean));
 
-% Trova un rumore negli ultimi 4 secondi se la DFT è più grande
+% Trova un rumore negli ultimi 4 secondi se la DFT e' piu' grande
 y_last = y(length(y)-4*Fs+1:length(y));
 Y_last = 1/Fs * fft(y_last);
 [dft_max, i_max] = max(abs(Y_last));
