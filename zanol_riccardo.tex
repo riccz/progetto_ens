@@ -1,0 +1,276 @@
+\documentclass{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[italian]{babel}
+
+\usepackage{amsmath}
+\usepackage{siunitx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{textcomp}
+\usepackage{graphicx}
+
+\definecolor{matlabgreen}{RGB}{28,172,0}
+\definecolor{matlablilas}{RGB}{170,55,241}
+
+\renewcommand{\lstlistingname}{Codice}
+
+\renewcommand{\thesubsection}{\arabic{subsection}}
+\makeatletter
+\def\@seccntformat#1{\@ifundefined{#1@cntformat}%
+   {\csname the#1\endcsname\quad}%       default
+   {\csname #1@cntformat\endcsname}}%    enable individual control
+\newcommand\section@cntformat{}
+\makeatother
+
+\newcommand{\includecode}[1]{\lstinputlisting[caption={\ttfamily #1},
+    label={lst:#1}]{#1}}
+\newcommand{\fig}[1]{Fig.~\ref{#1}}
+\newcommand{\cod}[1]{Cod.~\ref{#1}}
+\newcommand{\tab}[1]{Tab.~\ref{#1}}
+\newcommand{\eqn}[1]{(\ref{#1})}
+\newcommand{\inlcd}[1]{\lstinline[basicstyle=\ttfamily,keywordstyle={}]{#1}}
+
+\title{Progetto di Elaborazione Numerica dei Segnali}
+\author{Riccardo Zanol - mat. 1127207}
+\date{\today}
+
+\begin{document}
+\lstset{
+  language=Matlab,
+  basicstyle={\ttfamily \footnotesize},
+  breaklines=true,
+  morekeywords={true,false,warning,xlim},
+  keywordstyle=\color{blue},
+  stringstyle=\color{matlablilas},
+  commentstyle={\color{matlabgreen} \itshape},
+  numberstyle={\ttfamily \tiny},
+  frame=leftline,
+  showstringspaces=false,
+  numbers=left,
+  upquote=true,
+}
+\sisetup{
+  list-final-separator={ e }
+}
+\maketitle
+
+Lo script Matlab riportato nel \cod{lst:progetto.m}, dopo aver letto
+il file audio e definito alcuni parametri che saranno usati in
+seguito, elabora il segnale $y(nT)$ nelle righe da 17 a 46 cercando il
+rumore di ampiezza maggiore, stimandone ampiezza e instante d'inizio
+una volta nota la frequenza, applicando un filtro notch per eliminare
+il disturbo e ripetendo il ciclo \inlcd{while} finchè non viene più
+rilevato alcun rumore sinusoidale.
+
+\subsection{Frequenza}
+\label{sec:freq}
+La DFT di ognuno dei rumori $w_i(nT)$ è per definizione
+\begin{equation}
+  W_i(kF) = T \sum_{n=0}^{N-1}A_i\cos(2\pi f_i nT)e^{-j2\pi kF nT},
+\end{equation}
+che, applicando la formula di Eulero, diventa
+\begin{equation}
+  W_i(kF) = \frac{A_iT}{2} \left(
+  \sum_{n=0}^{N-1}e^{-j2\pi (kF-f_i) nT} +
+  \sum_{n=0}^{N-1}e^{-j2\pi (kF+f_i) nT}
+  \right)
+\end{equation}
+e, se la frequenza del rumore $f_i$ è un multiplo del quanto
+frequenziale $F$, si riduce a una coppia di impulsi:
+\begin{equation}
+  W_i(kF) = \frac{A_iTN}{2} \left( \delta(kF - f_i) + \delta(kF + f_i) \right).
+  \label{eq:W}
+\end{equation}
+Nel caso in cui $f_i$ non sia multipla di $F$ si può comunque
+approssimare l'ampiezza dei picchi con $\frac{A_iTN}{2}$.
+
+Osservando il modulo della DFT $Y(kF)$ del segnale in ingresso,
+riportata nella \fig{plot:y_dft}, si vede che i picchi relativi ai
+rumori hanno ampiezze molto più grandi del resto dello spettro del
+segnale, quindi per rilevarli automaticamente la funzione
+\inlcd{find_noise} (\cod{lst:find_noise.m}) calcola la DFT di $y$
+nell'intervallo $[14, 18]$ s, dove i tre rumori sono tutti presenti
+per l'intera durata dell'intervallo, e cerca il $k_i$ per cui
+l'ampiezza della trasformata è massima. Se
+\begin{equation}
+  |Y_{\mathit{last}}(k_iF)| \geq \mathit{min\_thresh} \cdot \frac{A_\mathit{min}TN}{2}
+  \label{eq:find_noise}
+\end{equation}
+la funzione rileva un rumore a frequenza $f_i = k_iF$, altrimenti
+ritorna \inlcd{NaN} per segnalare che non è stato rilevato alcun
+rumore. Nella formula \eqn{eq:find_noise} $A_\mathit{min} = 0.1$ è la
+minima ampiezza possibile per i disturbi, $TN = T_p = \SI{4}{\s}$ è la
+durata dell'intervallo di osservazone di $y$ e $\mathit{min\_thresh} =
+0.9$ abbassa del \SI{10}{\percent} la soglia minima per tenere conto
+di eventuali componenti a frequenza $f_i$ del segnale originale
+$x(nT)$ che potrebbero abbassare l'ampiezza dei picchi.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.7\textwidth]{y_dft}
+  \caption{Spettro del segnale di ingresso $y(t)$}
+  \label{plot:y_dft}
+\end{figure}
+
+Nel grafico in \fig{plot:y_dft_w_noises} e nella
+\tab{tab:noise_params} sono riportate le tre frequenze individuate.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.7\textwidth]{y_dft_w_noises}
+  \caption{Rumori rilevati}
+  \label{plot:y_dft_w_noises}
+\end{figure}
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{lrrrr}
+    Rumore & $f_i$                 & $A_i$ & $n_i$ & $n_iT$    \\
+    \hline
+    $w_1$ & \SI{2.2}{\kilo\hertz} & 0.1 & 144059 & \SI{6}{\s} \\
+    $w_2$ & \SI{2.6}{\kilo\hertz} & 0.1 & 144128 & \SI{6}{\s} \\
+    $w_3$ & \SI{5.3}{\kilo\hertz} & 0.2 & 216040 & \SI{9}{\s} \\
+  \end{tabular}
+  \caption{Parametri dei rumori}
+  \label{tab:noise_params}
+\end{table}
+
+\subsection{Ampiezza}
+Nota la frequenza di ciascuno dei rumori $f_i = k_iF$ si può usare
+l'equazione \eqn{eq:W} per ricavare l'ampiezza $A_i$ del rumore $w_i$
+dall'ampiezza dei picchi della DFT.  La funzione
+\inlcd{find_noise_amplitude} (\cod{lst:find_noise_amplitude.m})
+suppone trascurabile il contributo del segnale $x$ e calcola $A_i$
+dalla trasformata $Y_\mathit{last}(kF)$ degli ultimi 4 secondi di $y$:
+\begin{equation}
+  |A_i| = \frac{2|Y_\mathit{last}(k_iF)|}{T_p}
+\end{equation}
+con $T_p = \SI{4}{\s}$. Le ampiezze dei tre rumori rilevati sono
+riportate nella \tab{tab:noise_params} ed evidenziate, insieme agli
+istanti di attacco, nel grafico in \fig{plot:y_w_noises}.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.7\textwidth]{y_w_noise}
+  \caption{Ampiezza e istante di attacco dei rumori}
+  \label{plot:y_w_noises}
+\end{figure}
+
+\subsection{Istanti iniziali}
+Per rilevare l'istante di attacco di ciascuno dei rumori $w_i$ è
+possibile filtrare la componente a frequenza $f_i$ del segnale $y$ e
+cercare il primo campione in cui questa è sufficientemente diversa da
+zero. I filtri usati sono IIR di ordine 2 con funzione di
+trasferimento
+\begin{align}
+  H_\mathit{sel} &= \frac{b_0}{
+    (1 - re^{j\pi f_i/F_c}z^{-1})
+    (1 - re^{-j\pi f_i/F_c}z^{-1})} \\
+  &= \frac{2(1-r)|\sin(2\pi f_i/F_c)|}
+  {1 - 2r\cos(2\pi f_i/F_c)z^{-1} + r^2z^{-2}}
+\end{align}
+dove $b_0 = 2(1-r)|\sin(2\pi f_i/F_c)|$ è scelto in modo che il
+guadagno a frequenza $f_i$ sia circa 1. In \fig{plot:Hsel} è tracciata
+la risposta in frequenza del filtro per $f_1$.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.7\textwidth]{Hsel}
+  \caption{Filtro selettivo per $f_1$}
+  \label{plot:Hsel}
+\end{figure}
+
+La funzione \inlcd{find_noise_start} (\cod{lst:find_noise_start.m})
+chiama \inlcd{single_freq_filter} (\cod{lst:single_freq_filter.m}) per
+calcolare i coefficienti di un filtro selettivo centrato in $f_i$ con
+fattore di merito $Q_\mathit{sel}$, filtra il segnale $y(nT)$ e poi
+prende come istante iniziale del disturbo il primo campione che
+raggiunge $\mathit{thresh}$ volte l'ampiezza massima di $y(nT)$ nei
+primi 4 secondi. I parametri $\mathit{thresh} = 10$ e $Q_\mathit{sel}
+= 400$ sono stati scelti per tentativi provando alcuni dei segnali
+forniti.  Gli istanti di attacco stimati e i corrispondenti campioni
+sono riportati nella \tab{tab:noise_params} e nella
+\fig{plot:y_w_noises} insieme alle ampiezze dei rumori.
+
+\subsection{Filtraggio}
+Per attenuare un disturbo a frequenza $f_i$ viene usato un filtro
+notch con funzione di trasferimento
+\begin{equation}
+  H_i(z) = \frac{(1 - e^{j2\pi f_i/F_c}z^{-1})(1 - e^{-j2\pi f_i/F_c}z^{-1})}
+    {(1 - re^{j2\pi f_i/F_c}z^{-1})(1 - re^{-j2\pi f_i/F_c}z^{-1})}.
+\end{equation}
+Moltiplicando i due termini al numeratore e denominatore e applicando
+la formula di Eulero si ottengono i coefficienti della funzione di
+trasferimento:
+\begin{equation}
+  H_i(z) = \frac{1 - 2\cos(2\pi f_i/F_c)z^{-1} + z^{-2}}
+  {1 - 2r\cos(2\pi f_i/F_c)z^{-1} + r^2z^{-2}}.
+\end{equation}
+
+La funzione \inlcd{notch_filter} (\cod{lst:notch_filter.m}) calcola e
+restituisce i coefficienti di $H(z)$ a partire dalla frequenza da
+cancellare $f_i$ e dal fattore di merito $Q = \frac{f_i}{\Delta f}$
+desiderati. Se il parametro $r$ è circa 1 si può approssimare la banda
+del filtro con $\Delta \theta_{\SI{3}{\dB}} \simeq 2\delta$ dove
+$\delta = 1 - r$ è la distanza dei due poli dal cerchio di raggio
+unitario e $\Delta \theta_{\SI{3}{\dB}} = \frac{2\pi}{F_c}\Delta
+f_{\SI{3}{\dB}}$. La funzione usa questa approssimazione per scegliere
+il valore di $r = 1 - \frac{2\pi}{F_c} \frac{f_i}{Q}$.
+
+Nelle righe 35-36 del \cod{lst:progetto.m} il segnale di ingresso
+viene filtrato una volta per ciascuna frequenza dei rumori e queste
+operazioni sono equivalenti a filtrarlo una volta sola con il filtro
+$H(z) = H_1(z)H_2(z)H_3(z)$ di cui è tracciata la risposta in
+frequenza in \fig{plot:notch} e sono riportati i parametri nella
+\tab{tab:notch}. Il valore di $Q = 10$ è stato scelto per tentativi:
+valori troppo piccoli comportano una attenuazione eccessiva del
+segnale nelle frequenze vicino alle $f_i$, mentre valori troppo grandi
+comportano un lungo transitorio prima che i filtri cancellino il
+rumore.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.7\textwidth]{H}
+  \caption{Cascata dei tre filtri notch usati}
+  \label{plot:notch}
+\end{figure}
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{lrrrr}
+    Filtro & $f_0$                 & $\Delta f_{\SI{3}{\dB}}$ & $r$    \\
+    \hline
+    $H_1$  & \SI{2.2}{\kilo\hertz} & \SI{220}{\hertz}     & 0.942 \\
+    $H_2$  & \SI{2.6}{\kilo\hertz} & \SI{260}{\hertz}     & 0.932 \\
+    $H_3$  & \SI{5.3}{\kilo\hertz} & \SI{530}{\hertz}     & 0.861 \\
+  \end{tabular}
+  \caption{Parametri dei filtri notch}
+  \label{tab:notch}
+\end{table}
+
+Nel grafico di \fig{plot:y_dft_out} è tracciato lo spettro del segnale
+dopo il filtraggio dove si vede che i picchi relativi ai tre rumori
+sono stati cancellati. I tre rumori non sono più udibili ad eccezione
+di un ``click'' in corrispondenza degli istanti di attacco dovuto alla
+risposta transitoria dei filtri.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.7\textwidth]{y_dft_out}
+  \caption{Spettro del segnale filtrato}
+  \label{plot:y_dft_out}
+\end{figure}
+
+\clearpage
+
+\section{Codice Matlab}
+\includecode{notch\string_filter.m}
+\includecode{single\string_freq\string_filter.m}
+\includecode{find\string_noise.m}
+\includecode{find\string_noise\string_start.m}
+\includecode{find\string_noise\string_amplitude.m}
+\includecode{progetto.m}
+\end{document}
