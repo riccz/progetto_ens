@@ -1,9 +1,8 @@
-function A = find_noise_amplitude(y, f_0, Fs, q, n_0)
-[b, a] = single_freq_filter(f_0, Fs, q);
-y_noise = filter(b, a, y);
+function A = find_noise_amplitude(y, f_0, Fs)
+y_clean = y(1:4*Fs);
+y_w_all_noises = y(length(y) - 4*Fs + 1: length(y));
+W = 1/Fs * (fft(y_w_all_noises) - fft(y_clean));
 
-y_noise_only = y_noise(n_0+1:length(y));
-E = sum(abs(y_noise_only).^2);
-S = sum(cos(4*pi*f_0/Fs * (0:length(y_noise_only)-1)));
-A = sqrt(2*E/(length(y_noise_only) + S));
+k = floor(f_0 * 4 + 0.5);
+A = abs(W(k+1)) * 2 / 4;
 end

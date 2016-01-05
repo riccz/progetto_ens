@@ -22,12 +22,12 @@ while true
     end
     fprintf('Trovato un rumore a frequenza %f\n', f_0);
     
+    A = find_noise_amplitude(y, f_0, Fs);
+    fprintf('Ampiezza %f\n', A);
+    
     n_0 = find_noise_start(y, f_0, Fs, q_noise_params, noise_start_thresh);
     t_0 = n_0 / Fs;
     fprintf('Inizia al campione %d (%f s)\n', n_0, t_0);
-    
-    A = find_noise_amplitude(y, f_0, Fs, q_noise_params, n_0);
-    fprintf('Ampiezza %f\n', A);
     
     fprintf('\n');
     
