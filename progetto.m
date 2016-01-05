@@ -55,7 +55,7 @@ end
 
 % Grafico della trasf. di Fourier del segnale
 figure(1);
-Y = fft(y);
+Y = 1/Fs * fft(y);
 f = linspace(0, Fs, length(y));
 plot(f / 1000, 20*log10(abs(Y)));
 xlim([0, 24]);
@@ -83,7 +83,7 @@ print('H1', '-depsc');
 
 % DFT del segnale filtrato
 figure(3);
-Y = fft(y_filt);
+Y = 1/Fs * fft(y_filt);
 f = linspace(0, Fs, length(y));
 plot(f / 1000, 20*log10(abs(Y)));
 xlim([0, 24]);
