@@ -54,6 +54,13 @@ for i=1:length(plot_data)
     plot_data(i) = old_pd(sorted_i(i));
 end
 
+% Parametri dei filtri
+for i=1:length(plot_data)
+    f_0 = plot_data(i).f_0;
+    bw = f_0/q_notch;
+    r = 1 - 2*pi*bw/Fs;
+    fprintf('Filtro notch %d: f_0 = %f, bw = %f, r = %f\n', i, f_0, bw, r);
+end
 % Grafico della trasf. di Fourier del segnale
 figure(1);
 Y = 1/Fs * fft(y);
