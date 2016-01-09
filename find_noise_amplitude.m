@@ -1,9 +1,9 @@
-function A = find_noise_amplitude(y, f_0, Fs)
-y_w_all_noises = y(length(y) - 4*Fs + 1: length(y)); % Ultimi 4 secondi
-Y_w_all_noises = 1/Fs * fft(y_w_all_noises);
+function A = find_noise_amplitude(y, fi, Fc)
+y_last = y(length(y) - 4*Fc + 1: length(y)); % Ultimi 4 secondi
+Y_last = 1/Fc * fft(y_last);
 
-k = floor(f_0 * 4 + 0.5);
-maxY_noises = abs(Y_w_all_noises(k+1));
+k = floor(fi * 4 + 0.5);
+maxY = abs(Y_last(k+1));
 
-A = maxY_noises * 2 / 4;
+A = maxY * 2 / 4;
 end

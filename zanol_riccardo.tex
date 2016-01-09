@@ -188,8 +188,8 @@ chiama \inlcd{single_freq_filter} (\cod{lst:single_freq_filter.m}) per
 calcolare i coefficienti di un filtro selettivo centrato in $f_i$ con
 fattore di merito $Q_\mathit{sel}$, filtra il segnale $y(nT)$ e poi
 prende come istante iniziale del disturbo il primo campione che
-raggiunge $\mathit{thresh}$ volte l'ampiezza massima di $y(nT)$ nei
-primi 4 secondi. I parametri $\mathit{thresh} = 10$ e $Q_\mathit{sel}
+raggiunge $\mathit{ampl\_thresh}$ volte l'ampiezza massima di $y(nT)$ nei
+primi 4 secondi. I parametri $\mathit{ampl\_thresh} = 10$ e $Q_\mathit{sel}
 = 400$ sono stati scelti per tentativi provando alcuni dei segnali
 forniti.  Gli istanti di attacco stimati e i corrispondenti campioni
 sono riportati nella \tab{tab:noise_params} e nella
