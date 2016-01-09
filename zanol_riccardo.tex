@@ -191,11 +191,14 @@ prende come istante iniziale del disturbo il primo campione che
 raggiunge $\mathit{ampl\_thresh}$ volte l'ampiezza massima di $y(nT)$ nei
 primi 4 secondi. I parametri $\mathit{ampl\_thresh} = 10$ e $Q_\mathit{sel}
 = 400$ sono stati scelti per tentativi provando alcuni dei segnali
-forniti.  Gli istanti di attacco stimati e i corrispondenti campioni
+forniti e per calcolare $r$ a partire da $Q_\mathit{sel}$ è stata usata la
+stessa approssimazione del paragrafo \ref{sec:filtraggio}.
+Gli istanti di attacco stimati e i corrispondenti campioni
 sono riportati nella \tab{tab:noise_params} e nella
 \fig{plot:y_w_noises} insieme alle ampiezze dei rumori.
 
 \subsection{Filtraggio}
+\label{sec:filtraggio}
 Per attenuare un disturbo a frequenza $f_i$ viene usato un filtro
 notch con funzione di trasferimento
 \begin{equation}
